@@ -14,6 +14,7 @@ import javax.swing.JTextPane;
 import javax.swing.JLabel;
 import javax.swing.JCheckBox;
 import java.awt.event.ActionListener;
+import java.io.Console;
 import java.awt.event.ActionEvent;
 import java.awt.Font;
 import javax.swing.SwingConstants;
@@ -21,6 +22,8 @@ import javax.swing.UIManager;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 public class App {
 
@@ -52,6 +55,21 @@ public class App {
 		initialize();
 	}
 
+	
+	private void updatePlainCommand(DefaultListModel ltm)
+	{
+		String d = "";
+		String[] temp = null;
+		for(int i = 0; i< ltm.getSize(); i++){
+            temp = ((String) ltm.getElementAt(i)).split("-");
+            System.out.println(temp[0]);
+        }
+		
+		
+		
+	}
+	
+	
 	/**
 	 * Initialize the contents of the frame.
 	 */
@@ -61,48 +79,65 @@ public class App {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
-
-
-        
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(29, 59, 168, 95);
-		
-      
-		
-		
-		
 		
 		JButton btnToggleService = new JButton("Start Service");
 		btnToggleService.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 			}
 		});
+		
 		btnToggleService.setBounds(181, 255, 240, 45);
 		frame.getContentPane().add(btnToggleService);
-        
-		
-        
+
         frame.getContentPane().add(scrollPane);
         
         JList listListofPorts = new JList();
         scrollPane.setViewportView(listListofPorts);
-        //listListofPorts.setBounds(29, 59, 57, 95);
-        
-        
-        
         
         listListofPorts.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         listListofPorts.setFont(new Font("Serif", Font.ITALIC, 14));
-        listListofPorts.setLayoutOrientation(JList.VERTICAL);
-        //frame.getContentPane().add(listListofPorts);
+        listListofPorts.setLayoutOrientation(JList.VERTICAL);  
         
-        
+        JButton btnAdd = new JButton("Add");
+		btnAdd.setEnabled(false);
+
 		textFieldRemotePort = new JTextField();
+		textFieldRemotePort.addKeyListener(new KeyAdapter() {
+		
+			@Override
+			public void keyReleased(KeyEvent e) {
+				try {
+					Integer.parseInt(textFieldLocalPort.getText());
+					Integer.parseInt(textFieldRemotePort.getText());
+					btnAdd.setEnabled(true);
+				}
+				catch (Exception e1) {
+					btnAdd.setEnabled(false);
+				}
+			}
+		});
+
 		textFieldRemotePort.setBounds(103, 212, 57, 20);
 		frame.getContentPane().add(textFieldRemotePort);
 		textFieldRemotePort.setColumns(10);
 		
 		textFieldLocalPort = new JTextField();
+		textFieldLocalPort.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyReleased(KeyEvent e) {
+				try {
+					Integer.parseInt(textFieldLocalPort.getText());
+					Integer.parseInt(textFieldRemotePort.getText());
+					btnAdd.setEnabled(true);
+				}
+				catch (Exception e1) {
+					btnAdd.setEnabled(false);
+				}
+			}
+		});
+
 		textFieldLocalPort.setBounds(103, 181, 57, 20);
 		frame.getContentPane().add(textFieldLocalPort);
 		textFieldLocalPort.setColumns(10);
@@ -138,7 +173,7 @@ public class App {
 		lblNewLabel_1.setBounds(29, 43, 143, 14);
 		frame.getContentPane().add(lblNewLabel_1);
 		
-		JButton btnAdd = new JButton("Add");
+		
 		
 		btnAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -149,9 +184,11 @@ public class App {
 			            ltm.addElement((listListofPorts.getModel().getElementAt(i)));
 			        }
 				
-				ltm.addElement(textFieldLocalPort.getText()+" --- "+textFieldRemotePort.getText());
+				ltm.addElement(textFieldLocalPort.getText()+"-"+textFieldRemotePort.getText());
 				
 				listListofPorts.setModel(ltm);
+				
+				updatePlainCommand(ltm);
 				
 			}
 		});
