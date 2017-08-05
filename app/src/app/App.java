@@ -24,6 +24,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +34,8 @@ import org.json.simple.JSONArray;
 //import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import app.Tuple;
+import java.awt.Color;
+
 
 
 public class App {
@@ -41,7 +44,10 @@ public class App {
 	private JTextField textFieldRemotePort;
 	private JTextField textFieldLocalPort;
 	private Map<String, String> credentials = new HashMap<String, String>();
-	//ArrayList portlist = new ArrayList();
+	String dir = System.getProperty("user.dir")+"/src/app/";
+	//ArrayList<Map> portlist = new ArrayList<Map>();
+	JSONArray portforwardlist;
+	JList<String> listListofPorts;
 	
 	/**
 	 * Launch the application.
@@ -71,36 +77,58 @@ public class App {
 	
 	private void updatePlainCommand(DefaultListModel<String> ltm)
 	{
-		//String d = "";
-		String[] temp = null;
+		
+
+
+		String command = "";
+		ArrayList<String> parameter = new ArrayList<String>();
 		for(int i = 0; i< ltm.getSize(); i++){
-            temp = ((String) ltm.getElementAt(i)).split("-");
-            System.out.println(temp[0]);
+            //String temp = ltm.getElementAt(i).split(" <-> "));
+            
         }
+        
+	}
+	
+	private void updateListofPorts(JSONArray portforwardlist)
+	{
+		DefaultListModel<String> ltm = new DefaultListModel<String>();
 		
+		for(int i = 0; i< portforwardlist.size();i++){
+
+			String localport = ((JSONObject) portforwardlist.get(i)).get("localport").toString();
+			String remoteport = ((JSONObject) portforwardlist.get(i)).get("remoteport").toString();
+			
+			for (int o = 0; o < 5; o ++)
+			{
+				if (localport.length() < 5)
+				{
+					localport = " " + localport;
+				}
+				if (remoteport.length() < 5)
+				{
+					remoteport = " " + remoteport;
+				}
+			} 
+			ltm.addElement(String.format("%s <-> %s", localport, remoteport));
+	    }
 		
-		
+		listListofPorts.setModel(ltm);
+		updatePlainCommand(ltm);
 	}
 	
 	
-	/**
-	 * Initialize the contents of the frame.
-	 */
-	private void initialize() {
-		frame = new JFrame();
-		frame.setBounds(100, 100, 464, 356);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.getContentPane().setLayout(null);
-		
 	
+	private void store_portforwardlist(JSONArray portforwardlist)
+	{
+		
+	}
+	
+	private void load_credentials()
+	{
         JSONParser parser = new JSONParser();
  
         try {
- 
-        	String dir = System.getProperty("user.dir")+"/src/app/";
-
             Object obj = parser.parse(new FileReader(dir+"credentials.json"));
- 
             JSONObject jsonObject = (JSONObject) obj;
  
             String username = (String) jsonObject.get("username");
@@ -108,22 +136,83 @@ public class App {
             
             credentials.put("username",username);
             credentials.put("password",password);
-            /*
-            Object obj1 = parser.parse(new FileReader(dir+"portforwardlist.json"));
-            JSONObject jsonObject1 = (JSONObject) obj;
-            
-            JSONArray companyList = (JSONArray) jsonObject1.get("portforwardlist");
- */
-            
             
         } catch (Exception e) {
             e.printStackTrace();
         }
+	}
+	
+	private void store_credentials(String username, String password)
+	{
+		JSONObject obj = new JSONObject();
+        obj.put("username",  username);
+        obj.put("password",  password);
+        /*        
+	        obj.put("age", new Integer(100));
+	
+	        JSONArray list = new JSONArray();
+	        list.add("msg 1");
+	        list.add("msg 2");
+	        list.add("msg 3");
+	        obj.put("messages", list);
+         */
+
+        try (FileWriter file = new FileWriter(dir+"credentials.json")) {
+            file.write(obj.toJSONString());
+            file.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+	
+	private void load_portforwardlist()
+	{
+		JSONParser parser = new JSONParser();
+		 
+        try {
+        	String dir = System.getProperty("user.dir")+"/src/app/";
+
+            Object obj = parser.parse(new FileReader(dir+"portforwardlist.json"));
+            JSONObject jsonObject = (JSONObject) obj;
+            
+            portforwardlist = (JSONArray) jsonObject.get("portforwardlist");
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+	}
+	
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	
+	private void initialize() {
+		frame = new JFrame();
+		frame.setBounds(100, 100, 464, 356);
+		frame.setResizable(false);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setLayout(null);
 		
-		
-		
+	
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(29, 59, 168, 95);
+		
+		frame.getContentPane().add(scrollPane);
+        
+        listListofPorts = new JList<String>();
+        scrollPane.setViewportView(listListofPorts);
+        
+        listListofPorts.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        listListofPorts.setFont(new Font("Courier", Font.PLAIN, 11));
+        listListofPorts.setLayoutOrientation(JList.VERTICAL);  
+        
+		
+		load_credentials();
+		load_portforwardlist();
+		updateListofPorts(portforwardlist);
+		
+		
+		
 		
 		JButton btnToggleService = new JButton("Start Service");
 		btnToggleService.addActionListener(new ActionListener() {
@@ -134,14 +223,7 @@ public class App {
 		btnToggleService.setBounds(181, 255, 240, 45);
 		frame.getContentPane().add(btnToggleService);
 
-        frame.getContentPane().add(scrollPane);
         
-        JList<String> listListofPorts = new JList<String>();
-        scrollPane.setViewportView(listListofPorts);
-        
-        listListofPorts.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        listListofPorts.setFont(new Font("Serif", Font.ITALIC, 14));
-        listListofPorts.setLayoutOrientation(JList.VERTICAL);  
         
         JButton btnAdd = new JButton("Add");
 		btnAdd.setEnabled(false);
@@ -192,13 +274,18 @@ public class App {
 		JButton btnStoreCredentials = new JButton("Store Credentials");
 		btnStoreCredentials.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ShowCredentials dialog = new ShowCredentials();
+				load_credentials();
+				
+				ShowCredentials dialog = new ShowCredentials(credentials.get("username"),credentials.get("password"));
 				dialog.setVisible(true);
 				
 				dialog.addWindowListener(new WindowAdapter() {
 			         public void windowDeactivated(WindowEvent windowEvent){
-			            System.out.println(dialog.get_credentials());
-			            System.out.println(credentials.get("username"));
+			            Map<String, String> entered_credentials = dialog.get_credentials();
+			            if (!(entered_credentials.get("username").equals(credentials.get("username"))) || !(entered_credentials.get("password").equals(credentials.get("password"))))
+						{
+							store_credentials(entered_credentials.get("username"), entered_credentials.get("password"));
+						}
 			         }
 				});
 			}
@@ -222,8 +309,10 @@ public class App {
 		lblMultiportSshTunnel.setBounds(144, 11, 173, 14);
 		frame.getContentPane().add(lblMultiportSshTunnel);
 		
-		JLabel lblNewLabel_1 = new JLabel("List of Forwarded Ports:");
-		lblNewLabel_1.setBounds(29, 43, 143, 14);
+		JLabel lblNewLabel_1 = new JLabel("Localport <-> Remoteport");
+		lblNewLabel_1.setHorizontalAlignment(SwingConstants.CENTER);
+		lblNewLabel_1.setForeground(Color.GRAY);
+		lblNewLabel_1.setBounds(29, 156, 168, 14);
 		frame.getContentPane().add(lblNewLabel_1);
 		
 		
@@ -259,6 +348,10 @@ public class App {
 		JLabel lblRemotePort = new JLabel("Remote Port:");
 		lblRemotePort.setBounds(29, 218, 74, 14);
 		frame.getContentPane().add(lblRemotePort);
+		
+		JLabel label = new JLabel("List of Forwarded Ports:");
+		label.setBounds(29, 43, 143, 14);
+		frame.getContentPane().add(label);
 		
 		
 		

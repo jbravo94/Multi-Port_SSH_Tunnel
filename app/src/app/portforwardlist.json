@@ -1,12 +1,12 @@
 {
-	portforwardlist = (
+"portforwardlist" : [
 		{
 			"localport":"1000",
-			"remoteport":"1000"
+			"remoteport":"1111"
 		},
 		{
 			"localport":"10000",
-			"remoteport":"10000"
+			"remoteport":"11111"
 		}
-	)
+	]
 }
