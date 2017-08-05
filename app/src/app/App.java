@@ -5,32 +5,44 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import javax.swing.JComboBox;
 import javax.swing.JList;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JLabel;
 import javax.swing.JCheckBox;
 import java.awt.event.ActionListener;
-import java.io.Console;
 import java.awt.event.ActionEvent;
 import java.awt.Font;
+import java.awt.List;
+
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.json.simple.JSONArray;
+//import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import app.Tuple;
+
 
 public class App {
 
 	private JFrame frame;
 	private JTextField textFieldRemotePort;
 	private JTextField textFieldLocalPort;
-
+	private Map<String, String> credentials = new HashMap<String, String>();
+	//ArrayList portlist = new ArrayList();
+	
 	/**
 	 * Launch the application.
 	 */
@@ -41,6 +53,7 @@ public class App {
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 					App window = new App();
 					window.frame.setVisible(true);
+					
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -56,9 +69,9 @@ public class App {
 	}
 
 	
-	private void updatePlainCommand(DefaultListModel ltm)
+	private void updatePlainCommand(DefaultListModel<String> ltm)
 	{
-		String d = "";
+		//String d = "";
 		String[] temp = null;
 		for(int i = 0; i< ltm.getSize(); i++){
             temp = ((String) ltm.getElementAt(i)).split("-");
@@ -79,6 +92,36 @@ public class App {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
+	
+        JSONParser parser = new JSONParser();
+ 
+        try {
+ 
+        	String dir = System.getProperty("user.dir")+"/src/app/";
+
+            Object obj = parser.parse(new FileReader(dir+"credentials.json"));
+ 
+            JSONObject jsonObject = (JSONObject) obj;
+ 
+            String username = (String) jsonObject.get("username");
+            String password = (String) jsonObject.get("password");
+            
+            credentials.put("username",username);
+            credentials.put("password",password);
+            /*
+            Object obj1 = parser.parse(new FileReader(dir+"portforwardlist.json"));
+            JSONObject jsonObject1 = (JSONObject) obj;
+            
+            JSONArray companyList = (JSONArray) jsonObject1.get("portforwardlist");
+ */
+            
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+		
+		
+		
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(29, 59, 168, 95);
 		
@@ -93,7 +136,7 @@ public class App {
 
         frame.getContentPane().add(scrollPane);
         
-        JList listListofPorts = new JList();
+        JList<String> listListofPorts = new JList<String>();
         scrollPane.setViewportView(listListofPorts);
         
         listListofPorts.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -149,7 +192,17 @@ public class App {
 		JButton btnStoreCredentials = new JButton("Store Credentials");
 		btnStoreCredentials.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				ShowCredentials dialog = new ShowCredentials();
+				dialog.setVisible(true);
+				
+				dialog.addWindowListener(new WindowAdapter() {
+			         public void windowDeactivated(WindowEvent windowEvent){
+			            System.out.println(dialog.get_credentials());
+			            System.out.println(credentials.get("username"));
+			         }
+				});
 			}
+			
 		});
 		btnStoreCredentials.setBounds(293, 181, 128, 52);
 		frame.getContentPane().add(btnStoreCredentials);
@@ -178,7 +231,7 @@ public class App {
 		btnAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
-				DefaultListModel ltm = new DefaultListModel();
+				DefaultListModel<String> ltm = new DefaultListModel<String>();
 				
 				 for(int i = 0; i< listListofPorts.getModel().getSize();i++){
 			            ltm.addElement((listListofPorts.getModel().getElementAt(i)));
