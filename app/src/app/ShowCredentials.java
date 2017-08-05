@@ -28,6 +28,7 @@ public class ShowCredentials extends JFrame {
 	private JTextField textField_un;
 	private String Credentials;
 	private JTextField textField__pw;
+	private JTextField textField_dm;
 	/**
 	 * Launch the application.
 	 */
@@ -49,31 +50,32 @@ public class ShowCredentials extends JFrame {
 	{
 		Map<String, String> credentials = new HashMap<String, String>();
 		
+		credentials.put("domain",textField_dm.getText());
 		credentials.put("username",textField_un.getText());
         credentials.put("password",textField__pw.getText());
 		
 		return credentials;
 	}
 	
-	public ShowCredentials(String username, String password)
+	public ShowCredentials(String domain, String username, String password)
 	{
 		initialize();
+		textField_dm.setText(domain);
 		textField_un.setText(username);
 		textField__pw.setText(password);
-		
 	}
 	
 	private void initialize()
 	{
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		setBounds(100, 100, 268, 271);
+		setBounds(100, 100, 268, 307);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
 		textField_un = new JTextField();
-		textField_un.setBounds(114, 80, 115, 20);
+		textField_un.setBounds(116, 121, 115, 20);
 		contentPane.add(textField_un);
 		textField_un.setColumns(10);
 		
@@ -84,7 +86,7 @@ public class ShowCredentials extends JFrame {
 				dispose();
 			}
 		});
-		btn_save.setBounds(128, 183, 89, 23);
+		btn_save.setBounds(130, 224, 89, 23);
 		contentPane.add(btn_save);
 		
 		JLabel lblNewLabel = new JLabel("Enter Credentiales");
@@ -94,23 +96,32 @@ public class ShowCredentials extends JFrame {
 		contentPane.add(lblNewLabel);
 		
 		textField__pw = new JTextField();
-		textField__pw.setBounds(114, 122, 115, 20);
+		textField__pw.setBounds(116, 163, 115, 20);
 		contentPane.add(textField__pw);
 		textField__pw.setColumns(10);
 		
 		JLabel lblNewLabel_1 = new JLabel("Enter Username:");
-		lblNewLabel_1.setBounds(10, 83, 81, 14);
+		lblNewLabel_1.setBounds(12, 124, 81, 14);
 		contentPane.add(lblNewLabel_1);
 		
 		JLabel lblNewLabel_2 = new JLabel("Enter Password:");
-		lblNewLabel_2.setBounds(10, 125, 85, 14);
+		lblNewLabel_2.setBounds(12, 166, 85, 14);
 		contentPane.add(lblNewLabel_2);
 		
 		JCheckBox chckbxNewCheckBox = new JCheckBox("View Password");
 		chckbxNewCheckBox.setEnabled(false);
 		chckbxNewCheckBox.setSelected(true);
-		chckbxNewCheckBox.setBounds(10, 183, 97, 23);
+		chckbxNewCheckBox.setBounds(12, 224, 97, 23);
 		contentPane.add(chckbxNewCheckBox);
+		
+		textField_dm = new JTextField();
+		textField_dm.setColumns(10);
+		textField_dm.setBounds(116, 77, 115, 20);
+		contentPane.add(textField_dm);
+		
+		JLabel lblEnterDomain = new JLabel("Enter Domain:");
+		lblEnterDomain.setBounds(12, 80, 81, 14);
+		contentPane.add(lblEnterDomain);
 	}
 	
 	/**

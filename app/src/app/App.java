@@ -14,7 +14,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.Font;
 import java.awt.List;
-
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.JScrollPane;
@@ -29,20 +28,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.json.simple.JSONArray;
-//import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import java.awt.Color;
-
-
+import javax.swing.JTextArea;
+import javax.swing.JEditorPane;
 
 public class App {
 
 	private JFrame frame;
 	private JTextField textFieldRemotePort;
 	private JTextField textFieldLocalPort;
+	private JTextArea textAreaPlainCommand;
 	private Map<String, String> credentials = new HashMap<String, String>();
 	String dir = System.getProperty("user.dir")+"/src/app/";
 	//ArrayList<Map> portlist = new ArrayList<Map>();
@@ -52,6 +50,7 @@ public class App {
 	/**
 	 * Launch the application.
 	 */
+	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -70,23 +69,22 @@ public class App {
 	/**
 	 * Create the application.
 	 */
+	
 	public App() {
 		initialize();
 	}
 
-	
 	private void updatePlainCommand(DefaultListModel<String> ltm)
 	{
+		String command = "ssh -R ";
 		
-
-
-		String command = "";
-		ArrayList<String> parameter = new ArrayList<String>();
 		for(int i = 0; i< ltm.getSize(); i++){
-            //String temp = ltm.getElementAt(i).split(" <-> "));
-            
+			String[] temp = ltm.getElementAt(i).split("<->");
+            command += String.format("-L %s:%s:%s ", temp[0].replaceAll(" ", ""), credentials.get("domain"), temp[1].replaceAll(" ", ""));
         }
-        
+		command += String.format("%s@%s", credentials.get("username"), credentials.get("domain"));
+		
+		textAreaPlainCommand.setText(command);
 	}
 	
 	private void updateListofPorts(JSONArray portforwardlist)
@@ -116,11 +114,17 @@ public class App {
 		updatePlainCommand(ltm);
 	}
 	
-	
-	
 	private void store_portforwardlist(JSONArray portforwardlist)
 	{
-		
+        /*        
+        obj.put("age", new Integer(100));
+
+        JSONArray list = new JSONArray();
+        list.add("msg 1");
+        list.add("msg 2");
+        list.add("msg 3");
+		obj.put("messages", list);
+        */
 	}
 	
 	private void load_credentials()
@@ -131,9 +135,11 @@ public class App {
             Object obj = parser.parse(new FileReader(dir+"credentials.json"));
             JSONObject jsonObject = (JSONObject) obj;
  
+            String domain = (String) jsonObject.get("domain");
             String username = (String) jsonObject.get("username");
             String password = (String) jsonObject.get("password");
             
+            credentials.put("domain",domain);
             credentials.put("username",username);
             credentials.put("password",password);
             
@@ -142,20 +148,12 @@ public class App {
         }
 	}
 	
-	private void store_credentials(String username, String password)
+	private void store_credentials(String domain, String username, String password)
 	{
 		JSONObject obj = new JSONObject();
+		obj.put("domain",  domain);
         obj.put("username",  username);
         obj.put("password",  password);
-        /*        
-	        obj.put("age", new Integer(100));
-	
-	        JSONArray list = new JSONArray();
-	        list.add("msg 1");
-	        list.add("msg 2");
-	        list.add("msg 3");
-	        obj.put("messages", list);
-         */
 
         try (FileWriter file = new FileWriter(dir+"credentials.json")) {
             file.write(obj.toJSONString());
@@ -193,7 +191,6 @@ public class App {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
-	
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(29, 59, 168, 95);
 		
@@ -206,13 +203,15 @@ public class App {
         listListofPorts.setFont(new Font("Courier", Font.PLAIN, 11));
         listListofPorts.setLayoutOrientation(JList.VERTICAL);  
         
+        textAreaPlainCommand = new JTextArea();
+        textAreaPlainCommand.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        textAreaPlainCommand.setLineWrap(true);
+		textAreaPlainCommand.setBounds(253, 59, 168, 95);
+		frame.getContentPane().add(textAreaPlainCommand);
 		
 		load_credentials();
 		load_portforwardlist();
 		updateListofPorts(portforwardlist);
-		
-		
-		
 		
 		JButton btnToggleService = new JButton("Start Service");
 		btnToggleService.addActionListener(new ActionListener() {
@@ -223,8 +222,6 @@ public class App {
 		btnToggleService.setBounds(181, 255, 240, 45);
 		frame.getContentPane().add(btnToggleService);
 
-        
-        
         JButton btnAdd = new JButton("Add");
 		btnAdd.setEnabled(false);
 
@@ -267,30 +264,28 @@ public class App {
 		frame.getContentPane().add(textFieldLocalPort);
 		textFieldLocalPort.setColumns(10);
 		
-		JTextPane txtPlainCommand = new JTextPane();
-		txtPlainCommand.setBounds(253, 59, 168, 95);
-		frame.getContentPane().add(txtPlainCommand);
-		
 		JButton btnStoreCredentials = new JButton("Store Credentials");
 		btnStoreCredentials.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				load_credentials();
 				
-				ShowCredentials dialog = new ShowCredentials(credentials.get("username"),credentials.get("password"));
+				ShowCredentials dialog = new ShowCredentials(credentials.get("domain"),credentials.get("username"),credentials.get("password"));
 				dialog.setVisible(true);
 				
 				dialog.addWindowListener(new WindowAdapter() {
 			         public void windowDeactivated(WindowEvent windowEvent){
 			            Map<String, String> entered_credentials = dialog.get_credentials();
-			            if (!(entered_credentials.get("username").equals(credentials.get("username"))) || !(entered_credentials.get("password").equals(credentials.get("password"))))
+			            if (!(entered_credentials.get("domain").equals(credentials.get("domain"))) || !(entered_credentials.get("username").equals(credentials.get("username"))) || !(entered_credentials.get("password").equals(credentials.get("password"))))
 						{
-							store_credentials(entered_credentials.get("username"), entered_credentials.get("password"));
+							store_credentials(entered_credentials.get("domain"),entered_credentials.get("username"), entered_credentials.get("password"));
+							//updatePlainCommand(ltm);
 						}
 			         }
 				});
 			}
 			
 		});
+		
 		btnStoreCredentials.setBounds(293, 181, 128, 52);
 		frame.getContentPane().add(btnStoreCredentials);
 		
@@ -315,8 +310,6 @@ public class App {
 		lblNewLabel_1.setBounds(29, 156, 168, 14);
 		frame.getContentPane().add(lblNewLabel_1);
 		
-		
-		
 		btnAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
@@ -334,6 +327,7 @@ public class App {
 				
 			}
 		});
+		
 		btnAdd.setBounds(181, 180, 89, 23);
 		frame.getContentPane().add(btnAdd);
 		
@@ -352,10 +346,5 @@ public class App {
 		JLabel label = new JLabel("List of Forwarded Ports:");
 		label.setBounds(29, 43, 143, 14);
 		frame.getContentPane().add(label);
-		
-		
-		
-		
-		
 	}
 }
