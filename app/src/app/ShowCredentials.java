@@ -20,18 +20,17 @@ import javax.swing.SwingConstants;
 
 public class ShowCredentials extends JFrame {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
 	private JTextField textField_un;
 	private String Credentials;
 	private JTextField textField__pw;
 	private JTextField textField_dm;
+	
 	/**
 	 * Launch the application.
 	 */
+	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {

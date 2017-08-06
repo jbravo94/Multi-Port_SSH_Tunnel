@@ -1,19 +1,16 @@
 package app;
 
 import java.awt.EventQueue;
-
 import javax.swing.JFrame;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JList;
 import javax.swing.JTextField;
-import javax.swing.JTextPane;
 import javax.swing.JLabel;
 import javax.swing.JCheckBox;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.Font;
-import java.awt.List;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.JScrollPane;
@@ -25,7 +22,6 @@ import java.awt.event.WindowEvent;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.simple.JSONArray;
@@ -33,7 +29,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import java.awt.Color;
 import javax.swing.JTextArea;
-import javax.swing.JEditorPane;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 
 public class App {
 
@@ -43,7 +40,6 @@ public class App {
 	private JTextArea textAreaPlainCommand;
 	private Map<String, String> credentials = new HashMap<String, String>();
 	String dir = System.getProperty("user.dir")+"/src/app/";
-	//ArrayList<Map> portlist = new ArrayList<Map>();
 	JSONArray portforwardlist;
 	JList<String> listListofPorts;
 	
@@ -74,24 +70,27 @@ public class App {
 		initialize();
 	}
 
-	private void updatePlainCommand(DefaultListModel<String> ltm)
+	private void updatePlainCommand()
 	{
 		String command = "ssh -R ";
 		
-		for(int i = 0; i< ltm.getSize(); i++){
-			String[] temp = ltm.getElementAt(i).split("<->");
-            command += String.format("-L %s:%s:%s ", temp[0].replaceAll(" ", ""), credentials.get("domain"), temp[1].replaceAll(" ", ""));
+		for(int i = 0; i < portforwardlist.size(); i++){
+			
+			String localport = ((JSONObject) portforwardlist.get(i)).get("localport").toString();
+			String remoteport = ((JSONObject) portforwardlist.get(i)).get("remoteport").toString();
+			
+            command += String.format("-L %s:%s:%s ", localport, credentials.get("domain"), remoteport);
         }
 		command += String.format("%s@%s", credentials.get("username"), credentials.get("domain"));
 		
 		textAreaPlainCommand.setText(command);
 	}
 	
-	private void updateListofPorts(JSONArray portforwardlist)
+	private void updateListofPorts()
 	{
 		DefaultListModel<String> ltm = new DefaultListModel<String>();
 		
-		for(int i = 0; i< portforwardlist.size();i++){
+		for(int i = 0; i < portforwardlist.size();i++){
 
 			String localport = ((JSONObject) portforwardlist.get(i)).get("localport").toString();
 			String remoteport = ((JSONObject) portforwardlist.get(i)).get("remoteport").toString();
@@ -111,20 +110,22 @@ public class App {
 	    }
 		
 		listListofPorts.setModel(ltm);
-		updatePlainCommand(ltm);
+		
+		updatePlainCommand();
 	}
 	
-	private void store_portforwardlist(JSONArray portforwardlist)
+	private void store_portforwardlist()
 	{
-        /*        
-        obj.put("age", new Integer(100));
-
-        JSONArray list = new JSONArray();
-        list.add("msg 1");
-        list.add("msg 2");
-        list.add("msg 3");
-		obj.put("messages", list);
-        */
+		JSONObject obj = new JSONObject();
+		
+		obj.put("portforwardlist", portforwardlist);
+		
+        try (FileWriter file = new FileWriter(dir+"portforwardlist.json")) {
+            file.write(obj.toJSONString());
+            file.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 	}
 	
 	private void load_credentials()
@@ -195,8 +196,25 @@ public class App {
 		scrollPane.setBounds(29, 59, 168, 95);
 		
 		frame.getContentPane().add(scrollPane);
-        
+		JButton btnRemove = new JButton("Remove");
+		btnRemove.setEnabled(false);
+		
         listListofPorts = new JList<String>();
+        listListofPorts.addListSelectionListener(new ListSelectionListener() {
+        	public void valueChanged(ListSelectionEvent arg0) {
+        		if (!arg0.getValueIsAdjusting()) {
+        			if (listListofPorts.getSelectedValue() != null)
+        			{
+	        			btnRemove.setEnabled(true);
+	                }
+	        		else
+	        		{
+	        			btnRemove.setEnabled(false);
+	        		}
+        		}
+        	}
+        });
+
         scrollPane.setViewportView(listListofPorts);
         
         listListofPorts.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -211,7 +229,7 @@ public class App {
 		
 		load_credentials();
 		load_portforwardlist();
-		updateListofPorts(portforwardlist);
+		updateListofPorts();
 		
 		JButton btnToggleService = new JButton("Start Service");
 		btnToggleService.addActionListener(new ActionListener() {
@@ -278,12 +296,14 @@ public class App {
 			            if (!(entered_credentials.get("domain").equals(credentials.get("domain"))) || !(entered_credentials.get("username").equals(credentials.get("username"))) || !(entered_credentials.get("password").equals(credentials.get("password"))))
 						{
 							store_credentials(entered_credentials.get("domain"),entered_credentials.get("username"), entered_credentials.get("password"));
-							//updatePlainCommand(ltm);
+							credentials.put("domain", entered_credentials.get("domain"));
+							credentials.put("username", entered_credentials.get("username"));
+							credentials.put("password", entered_credentials.get("password"));
+							updatePlainCommand();
 						}
 			         }
 				});
 			}
-			
 		});
 		
 		btnStoreCredentials.setBounds(293, 181, 128, 52);
@@ -313,25 +333,67 @@ public class App {
 		btnAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
-				DefaultListModel<String> ltm = new DefaultListModel<String>();
+				 String localport = textFieldLocalPort.getText();
+				 String remoteport = textFieldRemotePort.getText();
+				
+				 DefaultListModel<String> ltm = new DefaultListModel<String>();
 				
 				 for(int i = 0; i< listListofPorts.getModel().getSize();i++){
 			            ltm.addElement((listListofPorts.getModel().getElementAt(i)));
-			        }
+			     }
+				 
+				 Map<String, String> temp = new HashMap<String, String>();
+					
+				 temp.put("localport",localport);
+				 temp.put("remoteport",remoteport);
+				 
+				 for (int o = 0; o < 5; o ++)
+					{
+						if (localport.length() < 5)
+						{
+							localport = " " + localport;
+						}
+						if (remoteport.length() < 5)
+						{
+							remoteport = " " + remoteport;
+						}
+					} 
 				
-				ltm.addElement(textFieldLocalPort.getText()+"-"+textFieldRemotePort.getText());
-				
-				listListofPorts.setModel(ltm);
-				
-				updatePlainCommand(ltm);
-				
+				if (!(ltm.contains(String.format("%s <-> %s", localport, remoteport))))
+				{
+					ltm.addElement(String.format("%s <-> %s", localport, remoteport)); 
+					 
+					listListofPorts.setModel(ltm);
+	
+					portforwardlist.add(new JSONObject(temp));
+					store_portforwardlist();
+					updatePlainCommand();
+				}
 			}
 		});
 		
 		btnAdd.setBounds(181, 180, 89, 23);
 		frame.getContentPane().add(btnAdd);
 		
-		JButton btnRemove = new JButton("Remove");
+		btnRemove.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				
+				String[] temp = listListofPorts.getSelectedValue().split("<->");
+				String localport = temp[0].replaceAll(" ", "");
+				String remoteport = temp[1].replaceAll(" ", "");
+				
+				for(int i = 0; i < portforwardlist.size(); i++)
+				{
+					if (((JSONObject) portforwardlist.get(i)).get("localport").toString().equals(localport) && ((JSONObject) portforwardlist.get(i)).get("remoteport").toString().equals(remoteport))
+					{
+						portforwardlist.remove(i);
+					}
+				}
+				store_portforwardlist();
+				updateListofPorts();
+			}
+		});
+		
 		btnRemove.setBounds(181, 211, 89, 23);
 		frame.getContentPane().add(btnRemove);
 		
