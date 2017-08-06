@@ -31,6 +31,7 @@ import java.awt.Color;
 import javax.swing.JTextArea;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.JPanel;
 
 public class App {
 
@@ -42,6 +43,7 @@ public class App {
 	String dir = System.getProperty("user.dir")+"/src/app/";
 	JSONArray portforwardlist;
 	JList<String> listListofPorts;
+	private boolean tunnel_enabled = false;
 	
 	/**
 	 * Launch the application.
@@ -231,9 +233,28 @@ public class App {
 		load_portforwardlist();
 		updateListofPorts();
 		
+		JPanel statusPanel = new JPanel();
+		statusPanel.setBackground(Color.RED);
+		statusPanel.setBounds(145, 267, 20, 20);
+		frame.getContentPane().add(statusPanel);
+		
 		JButton btnToggleService = new JButton("Start Service");
 		btnToggleService.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				
+				if (!tunnel_enabled)
+				{
+					btnToggleService.setText("Stop service");
+					statusPanel.setBackground(Color.GREEN);
+					tunnel_enabled = true;
+				}
+				else
+				{
+					btnToggleService.setText("Start service");
+					statusPanel.setBackground(Color.RED);
+					tunnel_enabled = false;
+				}
+				
 			}
 		});
 		
