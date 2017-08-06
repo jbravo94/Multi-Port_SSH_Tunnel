@@ -5,12 +5,17 @@ import javax.swing.JFrame;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
 import javax.swing.JCheckBox;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.JScrollPane;
@@ -27,11 +32,19 @@ import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
 import java.awt.Color;
+import java.awt.Container;
+
 import javax.swing.JTextArea;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+
+import com.jcraft.jsch.*;
+
+
 
 public class App {
 
@@ -44,6 +57,8 @@ public class App {
 	JSONArray portforwardlist;
 	JList<String> listListofPorts;
 	private boolean tunnel_enabled = false;
+	private JSch jsch = new JSch();
+	private Session session = new Session();
 	
 	/**
 	 * Launch the application.
@@ -72,6 +87,131 @@ public class App {
 		initialize();
 	}
 
+	
+	  public static class MyUserInfo implements UserInfo, UIKeyboardInteractive{
+		    public String getPassword(){ return passwd; }
+		    
+		    public void setPassword(String passwd) {this.passwd = passwd;}
+		    
+		    public void setPromptYesNo(String choice) {promptYesNo = choice;}
+		    
+		    String promptYesNo = "undefined";
+		    
+		    public boolean promptYesNo(String str){
+		    	if (promptYesNo.equals("yes"))
+		    	{
+		    		return true;
+		    	}
+		    	else if (promptYesNo.equals("no"))
+		    	{
+		    		return false;
+		    	}
+		    	else
+		    	{
+			      Object[] options={ "yes", "no" };
+			      int foo=JOptionPane.showOptionDialog(null, 
+			             str,
+			             "Warning", 
+			             JOptionPane.DEFAULT_OPTION, 
+			             JOptionPane.WARNING_MESSAGE,
+			             null, options, options[0]);
+			      System.out.println(foo==0);
+			       return foo==0;
+		    	}
+		    }
+		  
+		    String passwd = "";
+		    JTextField passwordField=(JTextField)new JPasswordField(20);
+
+		    public String getPassphrase(){ return passwd; }
+		    public boolean promptPassphrase(String message){ return true; }
+		    
+		    public boolean promptPassword(String message){
+		    	
+		    	if (passwd.equals(""))
+		    	{
+		    		 Object[] ob={passwordField}; 
+				      int result=
+					  JOptionPane.showConfirmDialog(null, ob, message,
+									JOptionPane.OK_CANCEL_OPTION);
+				      if(result==JOptionPane.OK_OPTION){
+					passwd=passwordField.getText();
+					return true;
+				      }
+				      else{ return false; }
+		    	}
+		    	else
+		    	{
+		    		return true;
+		    	}
+		      
+		    }
+		    
+		    public void showMessage(String message){
+		      JOptionPane.showMessageDialog(null, message);
+		    }
+		    final GridBagConstraints gbc = 
+		      new GridBagConstraints(0,0,1,1,1,1,
+		                             GridBagConstraints.NORTHWEST,
+		                             GridBagConstraints.NONE,
+		                             new Insets(0,0,0,0),0,0);
+		    private Container panel;
+
+			@Override
+			public String[] promptKeyboardInteractive(String destination,
+                    String name,
+                    String instruction,
+                    String[] prompt,
+                    boolean[] echo){
+			panel = new JPanel();
+			panel.setLayout(new GridBagLayout());
+			
+			gbc.weightx = 1.0;
+			gbc.gridwidth = GridBagConstraints.REMAINDER;
+			gbc.gridx = 0;
+			panel.add(new JLabel(instruction), gbc);
+			gbc.gridy++;
+			
+			gbc.gridwidth = GridBagConstraints.RELATIVE;
+			
+			JTextField[] texts=new JTextField[prompt.length];
+			for(int i=0; i<prompt.length; i++){
+			gbc.fill = GridBagConstraints.NONE;
+			gbc.gridx = 0;
+			gbc.weightx = 1;
+			panel.add(new JLabel(prompt[i]),gbc);
+			
+			gbc.gridx = 1;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			gbc.weighty = 1;
+			if(echo[i]){
+			texts[i]=new JTextField(20);
+			}
+			else{
+			texts[i]=new JPasswordField(20);
+			}
+			panel.add(texts[i], gbc);
+			gbc.gridy++;
+			}
+			
+			if(JOptionPane.showConfirmDialog(null, panel, 
+			             destination+": "+name,
+			             JOptionPane.OK_CANCEL_OPTION,
+			             JOptionPane.QUESTION_MESSAGE)
+			==JOptionPane.OK_OPTION){
+			String[] response=new String[prompt.length];
+			for(int i=0; i<prompt.length; i++){
+			response[i]=texts[i].getText();
+			}
+			return response;
+			}
+			else{
+			return null;  // cancel
+			}
+		}
+	}
+	
+	
 	private void updatePlainCommand()
 	{
 		String command = "ssh -R ";
@@ -239,22 +379,38 @@ public class App {
 		frame.getContentPane().add(statusPanel);
 		
 		JButton btnToggleService = new JButton("Start Service");
+		btnToggleService.setFont(new Font("Tahoma", Font.BOLD, 11));
 		btnToggleService.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				
 				if (!tunnel_enabled)
 				{
-					btnToggleService.setText("Stop service");
-					statusPanel.setBackground(Color.GREEN);
-					tunnel_enabled = true;
+					try {
+						session = jsch.getSession(credentials.get("username"), credentials.get("domain"), 22);
+						UserInfo ui=new MyUserInfo();
+						ui.setPassword(credentials.get("password"));
+						ui.setPromptYesNo("yes");
+				        session.setUserInfo(ui);
+
+						session.connect();
+
+						session.setPortForwardingR(Integer.parseInt((String) ((JSONObject) portforwardlist.get(0)).get("remoteport")), "localhost", Integer.parseInt((String) ((JSONObject) portforwardlist.get(0)).get("localport")));
+						btnToggleService.setText("Stop service");
+						statusPanel.setBackground(Color.GREEN);
+						tunnel_enabled = true;
+					}
+					catch(Exception e)
+					{
+						e.printStackTrace();
+					}
 				}
 				else
 				{
+					session.disconnect();
 					btnToggleService.setText("Start service");
 					statusPanel.setBackground(Color.RED);
 					tunnel_enabled = false;
 				}
-				
 			}
 		});
 		

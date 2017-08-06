@@ -179,7 +179,11 @@ public class Session implements Runnable{
     }
   }
 
-  public void connect() throws JSchException{
+  public Session() {
+	// TODO Auto-generated constructor stub
+}
+
+public void connect() throws JSchException{
     connect(timeout);
   }
 

@@ -67,6 +67,7 @@ public class PortForwardingR{
   }
 
   public static class MyUserInfo implements UserInfo, UIKeyboardInteractive{
+	  
     public String getPassword(){ return passwd; }
     public boolean promptYesNo(String str){
       Object[] options={ "yes", "no" };
@@ -155,5 +156,15 @@ public class PortForwardingR{
         return null;  // cancel
       }
     }
+	@Override
+	public void setPassword(String passwd) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void setPromptYesNo(String choice) {
+		// TODO Auto-generated method stub
+		
+	}
   }
 }
