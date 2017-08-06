@@ -214,14 +214,14 @@ public class App {
 	
 	private void updatePlainCommand()
 	{
-		String command = "ssh -R ";
+		String command = "ssh -vN ";
 		
 		for(int i = 0; i < portforwardlist.size(); i++){
 			
 			String localport = ((JSONObject) portforwardlist.get(i)).get("localport").toString();
 			String remoteport = ((JSONObject) portforwardlist.get(i)).get("remoteport").toString();
 			
-            command += String.format("-L %s:%s:%s ", localport, credentials.get("domain"), remoteport);
+            command += String.format("-R %s:%s:%s ", remoteport, "localhost", localport);
         }
 		command += String.format("%s@%s", credentials.get("username"), credentials.get("domain"));
 		
@@ -248,7 +248,7 @@ public class App {
 					remoteport = " " + remoteport;
 				}
 			} 
-			ltm.addElement(String.format("%s <-> %s", localport, remoteport));
+			ltm.addElement(String.format("%s <-> %s", remoteport, localport));
 	    }
 		
 		listListofPorts.setModel(ltm);
@@ -395,6 +395,7 @@ public class App {
 						session.connect();
 
 						session.setPortForwardingR(Integer.parseInt((String) ((JSONObject) portforwardlist.get(0)).get("remoteport")), "localhost", Integer.parseInt((String) ((JSONObject) portforwardlist.get(0)).get("localport")));
+						session.setPortForwardingR(Integer.parseInt((String) ((JSONObject) portforwardlist.get(1)).get("remoteport")), "localhost", Integer.parseInt((String) ((JSONObject) portforwardlist.get(1)).get("localport")));
 						btnToggleService.setText("Stop service");
 						statusPanel.setBackground(Color.GREEN);
 						tunnel_enabled = true;
@@ -436,7 +437,7 @@ public class App {
 			}
 		});
 
-		textFieldRemotePort.setBounds(103, 212, 57, 20);
+		textFieldRemotePort.setBounds(103, 181, 57, 20);
 		frame.getContentPane().add(textFieldRemotePort);
 		textFieldRemotePort.setColumns(10);
 		
@@ -455,7 +456,7 @@ public class App {
 			}
 		});
 
-		textFieldLocalPort.setBounds(103, 181, 57, 20);
+		textFieldLocalPort.setBounds(103, 212, 57, 20);
 		frame.getContentPane().add(textFieldLocalPort);
 		textFieldLocalPort.setColumns(10);
 		
@@ -501,7 +502,7 @@ public class App {
 		lblMultiportSshTunnel.setBounds(144, 11, 173, 14);
 		frame.getContentPane().add(lblMultiportSshTunnel);
 		
-		JLabel lblNewLabel_1 = new JLabel("Localport <-> Remoteport");
+		JLabel lblNewLabel_1 = new JLabel("Remoteport <-> Localport");
 		lblNewLabel_1.setHorizontalAlignment(SwingConstants.CENTER);
 		lblNewLabel_1.setForeground(Color.GRAY);
 		lblNewLabel_1.setBounds(29, 156, 168, 14);
@@ -575,11 +576,11 @@ public class App {
 		frame.getContentPane().add(btnRemove);
 		
 		JLabel lblLocalPort = new JLabel("Local Port:");
-		lblLocalPort.setBounds(29, 184, 74, 14);
+		lblLocalPort.setBounds(29, 215, 74, 14);
 		frame.getContentPane().add(lblLocalPort);
 		
 		JLabel lblRemotePort = new JLabel("Remote Port:");
-		lblRemotePort.setBounds(29, 218, 74, 14);
+		lblRemotePort.setBounds(29, 187, 74, 14);
 		frame.getContentPane().add(lblRemotePort);
 		
 		JLabel label = new JLabel("List of Forwarded Ports:");
