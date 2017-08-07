@@ -394,8 +394,10 @@ public class App {
 
 						session.connect();
 
-						session.setPortForwardingR(Integer.parseInt((String) ((JSONObject) portforwardlist.get(0)).get("remoteport")), "localhost", Integer.parseInt((String) ((JSONObject) portforwardlist.get(0)).get("localport")));
-						session.setPortForwardingR(Integer.parseInt((String) ((JSONObject) portforwardlist.get(1)).get("remoteport")), "localhost", Integer.parseInt((String) ((JSONObject) portforwardlist.get(1)).get("localport")));
+						for (int i = 0; i < portforwardlist.size(); i ++) {
+							session.setPortForwardingR(Integer.parseInt((String) ((JSONObject) portforwardlist.get(i)).get("remoteport")), "localhost", Integer.parseInt((String) ((JSONObject) portforwardlist.get(i)).get("localport")));
+						}
+						
 						btnToggleService.setText("Stop service");
 						statusPanel.setBackground(Color.GREEN);
 						tunnel_enabled = true;
