@@ -311,8 +311,6 @@ public class App {
 		JSONParser parser = new JSONParser();
 		 
         try {
-        	String dir = System.getProperty("user.dir")+"/src/app/";
-
             Object obj = parser.parse(new FileReader(dir+"portforwardlist.json"));
             JSONObject jsonObject = (JSONObject) obj;
             

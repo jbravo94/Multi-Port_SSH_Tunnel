@@ -1,1 +1,1 @@
-{"portforwardlist":[{"localport":"80","remoteport":"8080"},{"localport":"1","remoteport":"1"}]}
+{"portforwardlist":[{"localport":"80","remoteport":"8080"}]}
