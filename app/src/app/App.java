@@ -537,9 +537,9 @@ public class App {
 						}
 					} 
 				
-				if (!(ltm.contains(String.format("%s <-> %s", localport, remoteport))))
+				if (!(ltm.contains(String.format("%s <-> %s", remoteport, localport))))
 				{
-					ltm.addElement(String.format("%s <-> %s", localport, remoteport)); 
+					ltm.addElement(String.format("%s <-> %s", remoteport, localport)); 
 					 
 					listListofPorts.setModel(ltm);
 	
@@ -557,8 +557,8 @@ public class App {
 			public void actionPerformed(ActionEvent arg0) {
 				
 				String[] temp = listListofPorts.getSelectedValue().split("<->");
-				String localport = temp[0].replaceAll(" ", "");
-				String remoteport = temp[1].replaceAll(" ", "");
+				String remoteport = temp[0].replaceAll(" ", "");
+				String localport = temp[1].replaceAll(" ", "");
 				
 				for(int i = 0; i < portforwardlist.size(); i++)
 				{
